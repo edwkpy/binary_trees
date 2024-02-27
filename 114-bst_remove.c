@@ -1,72 +1,106 @@
 #include "binary_trees.h"
 
 /**
- * bst_remove - removes a node from a Binary Search Tree
- * @root: pointer to the root node of the tree where you will remove a node
- * @value: value to remove in the tree
- * Return: pointer to the new root node of the tree after removing the desired
- * value
+ * find_inorder_successor - finds the successor of a node
+ * using the inorder traversal
+ * @node: the node
+ * Return: a pointer to the inorder successor
  */
-bst_t *bst_remove(bst_t *root, int value)
+bst_t *find_inorder_successor(bst_t *node)
 {
-	bst_t *tmp;
-
-	if (!root)
-		return (NULL);
-	/* If the value is less than the root, */
-	if (value < root->n)
-		/* recursively call the function on the left side of the tree. */
-		root->left = bst_remove(root->left, value);
-	/* If the value is greater than the root, */
-	else if (value > root->n)
-		/* recursively call the function on the right side of the tree. */
-		root->right = bst_remove(root->right, value);
-	else /* If the value is equal to the root, we found the node to remove. */
-	{
-		if (!root->left) /* If the node to remove has no left child, */
+		node = node->right;
+		while (node->left)
 		{
-			/* then replace the node with its right child. */
-			tmp = root->right;
-			free(root);
-			return (tmp);
+			node = node->left;
 		}
-		else if (!root->right) /* If the node to remove has no right child, */
-		{
-			tmp = root->left; /* then replace the node with its left child. */
-			free(root);
-			return (tmp);
-		}
-		/*
-		* If the node has both a left and right child then find the minimum
-		* value in the right subtree.
-		*/
-		tmp = bst_min_node(root->right);
-		/* replace the value of the node to remove with the minimum value. */
-		root->n = tmp->n;
-		/* recursively call the func on right subtree to remove min value node. */
-		root->right = bst_remove(root->right, tmp->n);
-	}
-	return (root); /* return the root */
+		return (node);
 }
 
 /**
- * bst_min_node - finds the minimum node in a binary search tree.
- * @root: pointer to the root node of the tree to traverse.
- *
- * Return: pointer to the minimum node
+ * replace_node_with_successor - replaces the node with its successor
+ * @root: the root of the tree
+ * @node: the node to be replaced
  */
-bst_t *bst_min_node(bst_t *root)
+void replace_node_with_successor(bst_t **root, bst_t *node)
 {
-	bst_t *tmp;
+	bst_t *successor;
 
-	/* Assign the address of the root node to the tmp pointer. */
-	tmp = root;
-
-	/* Loop until the left node of the tmp pointer is NULL. */
-	while (tmp->left != NULL)
-		tmp = tmp->left;
-	/* Return the address of the tmp pointer. */
-	return (tmp);
+	successor = find_inorder_successor(node);
+	if (successor->parent)
+		successor->parent->left = successor->right;
+	if (successor->right)
+		successor->right->parent = successor->parent;
+	node->right->parent = successor;
+	node->left->parent = successor;
+	successor->right = node->right;
+	successor->left = node->left;
+	successor->parent = node->parent;
+	if (node == *root)
+		*root = successor;
+	else if (node->parent)
+	{
+		if (node->parent && node == node->parent->left)
+			node->parent->left = successor;
+		else
+			node->parent->right = successor;
+	}
 }
 
-/* CODE DOESN'T PASS ALL CHECKS */
+/**
+ * one_child - handles the case when node has one child
+ * @node: node
+ * @child: right OR left child of node
+ */
+void one_child(bst_t *node, bst_t *child)
+{
+	child->parent = node->parent;
+	if (node == node->parent->right)
+		node->parent->right = child;
+	else
+		node->parent->left = child;
+}
+/**
+ * bst_remove - a function that removes a node from a Binary Search Tree
+ * @root: a pointer to the root node of the tree
+ * @value: the value to remove in the tree
+ * Return: a pointer to the root
+ */
+bst_t *bst_remove(bst_t *root, int value)
+{
+	bst_t *node;
+
+	if (!root)
+		return (NULL);
+	node = (bst_t *)root;
+	while (node)
+	{
+		if (node->n == value)
+		{
+			if (node->left && node->right)
+			{
+				replace_node_with_successor(&root, node);
+			}
+			else if (node->left && node->parent)
+			{
+				one_child(node, node->left);
+			}
+			else if (node->right && node->parent)
+			{
+				one_child(node, node->right);
+			}
+
+			else if ((node->left || node->right) && !node->parent)
+			{
+				node->left->parent = NULL;
+				root = node->left;
+			}
+			free(node);
+			return (root);
+		}
+		else if (node->n > value)
+			node = node->left;
+		else if (node->n < value)
+			node = node->right;
+	}
+	return (root);
+}

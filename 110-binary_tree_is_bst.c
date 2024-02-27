@@ -1,55 +1,59 @@
 #include "binary_trees.h"
 
 /**
- * binary_tree_is_bst - checks if a binary tree is a valid Binary Search Tree.
- * @tree: pointer to the root node of the tree to check.
- *
- * If tree is NULL, return 0.
- *
- * Return: 1 if tree is a valid BST, and 0 otherwise
+ * compare_all_left_children -  compares the values of tree node
+ * to all nodes of the left subtree
+ * @tree: pointer to root node of the subtree
+ * @child: pointer to the node of left child
+ * Return: 1 if all values in left subtree are less than the value of tree,
+ * 0 if not
+ */
+int compare_all_left_children(const binary_tree_t *tree, binary_tree_t *child)
+{
+	if (!child)
+		return (1);
+	if (tree->n <= child->n)
+		return (0);
+	return (1 * compare_all_left_children(tree, child->left)
+			* compare_all_left_children(tree, child->right));
+}
+
+/**
+ * compare_all_right_children -  compares the values of tree node
+ * to all nodes of the right subtree
+ * @tree: pointer to root node of the subtree
+ * @child: pointer to the node of right child
+ * Return: 1 if all values in right subtree are greater than the value of tree,
+ * 0 if not
+ */
+int compare_all_right_children(const binary_tree_t *tree, binary_tree_t *child)
+{
+	if (!child)
+		return (1);
+	if (tree->n >= child->n)
+		return (0);
+	return (1 * compare_all_right_children(tree, child->left)
+			* compare_all_right_children(tree, child->right));
+}
+
+
+/**
+ * binary_tree_is_bst - checks if a binary tree is a valid Binary Search Tree
+ * @tree: a pointer to the root node of the tree to check
+ * Return: 1 if Binary Search Tree, 0 if not
  */
 int binary_tree_is_bst(const binary_tree_t *tree)
 {
-	/* If the tree is empty, it's not a BST. */
-	if (tree == NULL)
+	if (!tree)
 		return (0);
-	/* If the tree has no children, it's a BST. */
-	if (tree->left == NULL && tree->right == NULL)
+	if (!tree->left && !tree->right)
 		return (1);
-	/* If the tree has two children, */
-	if (tree->left != NULL && tree->right != NULL)
-	{
-		/*
-		* check that left child is less than the parent and the right
-		* child is greater than the parent,
-		*/
-		if (tree->left->n < tree->n && tree->right->n > tree->n)
-			/* If so, recursively check that left and right subtrees are also BSTs */
-			return (binary_tree_is_bst(tree->left) &&
-				binary_tree_is_bst(tree->right));
-		else
-			return (0);
-	}
-	/* If the tree has only a left child, */
-	if (tree->left != NULL)
-	{
-		/* check that the left child is less than the parent. */
-		if (tree->left->n < tree->n)
-			/* If so, recursively check that the left subtree is a BST. */
-			return (binary_tree_is_bst(tree->left));
-		else
-			return (0);
-	}
-	if (tree->right != NULL) /* If the tree has only a right child, */
-	{
-		/* check that the right child is greater than the parent. */
-		if (tree->right->n > tree->n)
-			/* If so, recursively check that the right subtree is a BST. */
-			return (binary_tree_is_bst(tree->right));
-		else
-			return (0);
-	}
-	return (0);
+	if ((!tree->left && compare_all_right_children(tree, tree->right))
+			|| (!tree->right && compare_all_left_children(tree, tree->left)))
+		return (1);
+	if (!compare_all_left_children(tree, tree->left)
+			|| !compare_all_right_children(tree, tree->right))
+		return (0);
+	return (1 * binary_tree_is_bst(tree->left)
+			* binary_tree_is_bst(tree->right));
 }
-
-/* CODE DOESN'T PASS ALL CHECKS */
